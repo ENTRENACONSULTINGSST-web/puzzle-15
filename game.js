@@ -1,19 +1,28 @@
 const config = {
     type: Phaser.AUTO,
-    width: 540,
-    height: 750,
+    scale: {
+        mode: Phaser.Scale.FIT, // Ajusta el juego a la pantalla manteniendo proporción
+        autoCenter: Phaser.Scale.CENTER_BOTH, // Centra el juego horizontal y verticalmente
+        width: 540,  // Ancho lógico interno
+        height: 900  // Alto lógico interno (proporción tipo celular)
+    },
     backgroundColor: "#111",
     scene: { preload, create }
 };
 
 const game = new Phaser.Game(config);
 
+// GEOMETRÍA CALCULADA PARA CENTRADO TOTAL
 const GRID = 4;
-const SIZE = 125; 
-const GAP = 2;   
-const OFFSET_X = 20;
-const OFFSET_Y = 220; 
-const MAX_TIME = 180; 
+const SIZE = 120; 
+const GAP = 5;
+// Calculamos OFFSET_X automáticamente para que el tablero esté siempre centrado
+const TABLERO_ANCHO = (GRID * SIZE) + ((GRID - 1) * GAP);
+const OFFSET_X = (540 - TABLERO_ANCHO) / 2; 
+const OFFSET_Y = 250; 
+const MAX_TIME = 180;
+
+// ... (Resto de variables globales: pieces, empty, etc. se mantienen igual)
 
 let pieces = [];
 let empty = { row: 3, col: 3 };
@@ -25,7 +34,7 @@ let btnShowSolution;
 
 // --- CONFIGURACIÓN DE IMÁGENES ---
 // Asegúrate de que los nombres y extensiones coincidan exactamente con tus archivos en /assets
-const misImagenes = ["imagen1.jpg", "imagen2.jpg", "imagen3.jpg"];
+const misImagenes = ["imagen.jpg", "imagen2.jpg", "imagen3.jpg","imagen4.jpg", "imagen5.jpg", "imagen6.jpg","imagen7.jpg", "imagen8.jpg", "imagen9.jpg"];
 
 function preload() {
     // Seleccionar una imagen al azar de la lista
@@ -127,10 +136,11 @@ function create() {
         loop: true
     });
 
-    shuffleBoard.call(this);
+   shuffleBoard.call(this);
 }
 
-// Función para crear botones estilizados
+// --- FUNCIONES DE APOYO ---
+
 function createButton(scene, x, y, width, label, color, callback) {
     const container = scene.add.container(x, y);
     const bg = scene.add.rectangle(0, 0, width, 50, color).setInteractive({ useHandCursor: true });
@@ -188,19 +198,36 @@ function movePiece(piece) {
 }
 
 function shuffleBoard() {
-    for (let i = 0; i < 100; i++) {
+    // CONFIGURACIÓN: 50 movimientos = MUY FÁCIL
+    const MOVIMIENTOS_MEZCLA = 50; 
+    let lastPiece = null;
+
+    for (let i = 0; i < MOVIMIENTOS_MEZCLA; i++) {
         const neighbors = [];
         const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
+
         dirs.forEach(d => {
             const nr = empty.row + d[0], nc = empty.col + d[1];
-            if (nr >= 0 && nr < 4 && nc >= 0 && nc < 4 && pieces[nr][nc]) neighbors.push(pieces[nr][nc]);
+            if (nr >= 0 && nr < 4 && nc >= 0 && nc < 4 && pieces[nr][nc]) {
+                if (pieces[nr][nc] !== lastPiece) {
+                    neighbors.push(pieces[nr][nc]);
+                }
+            }
         });
-        const p = Phaser.Utils.Array.GetRandom(neighbors);
-        const or = p.row, oc = p.col;
-        pieces[empty.row][empty.col] = p; pieces[or][oc] = null;
-        p.row = empty.row; p.col = empty.col; empty.row = or; empty.col = oc;
-        const nx = OFFSET_X + p.col * (SIZE + GAP), ny = OFFSET_Y + p.row * (SIZE + GAP);
-        p.setPosition(nx, ny); p.border.setPosition(nx, ny);
+
+        if (neighbors.length > 0) {
+            const p = Phaser.Utils.Array.GetRandom(neighbors);
+            lastPiece = p;
+            const or = p.row, oc = p.col;
+            pieces[empty.row][empty.col] = p; 
+            pieces[or][oc] = null;
+            p.row = empty.row; p.col = empty.col; 
+            empty.row = or; empty.col = oc;
+
+            const nx = OFFSET_X + p.col * (SIZE + GAP), ny = OFFSET_Y + p.row * (SIZE + GAP);
+            p.setPosition(nx, ny); 
+            p.border.setPosition(nx, ny);
+        }
     }
 }
 
@@ -214,6 +241,8 @@ function checkWin() {
     }
     if (matches === 15) {
         isGameOver = true;
-        timerText.setText(`¡GANASTE!`).setFill("#00ff00");
+        // Calculamos el tiempo que tardó
+        const tiempoFinal = MAX_TIME - timeLeft;
+        timerText.setText(`¡LOGRADO EN ${tiempoFinal}s!`).setFill("#00ff00");
     }
 }
