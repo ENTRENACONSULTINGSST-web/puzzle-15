@@ -12,7 +12,7 @@ const GRID = 4;
 const SIZE = 125; 
 const GAP = 2;   
 const OFFSET_X = 20;
-const OFFSET_Y = 220; // Espacio suficiente para la UI
+const OFFSET_Y = 220; 
 const MAX_TIME = 180; 
 
 let pieces = [];
@@ -23,32 +23,46 @@ let timerText;
 let timerEvent;
 let btnShowSolution;
 
+// --- CONFIGURACIÓN DE IMÁGENES ---
+// Asegúrate de que los nombres y extensiones coincidan exactamente con tus archivos en /assets
+const misImagenes = ["imagen1.jpg", "imagen2.jpg", "imagen3.png"];
+
 function preload() {
-    this.load.image("photo", "assets/imagen.jpg");
+    // Seleccionar una imagen al azar de la lista
+    const imagenElegida = Phaser.Utils.Array.GetRandom(misImagenes);
+    console.log("Jugando con:", imagenElegida);
+    
+    // La cargamos con el alias "photo" para que el resto del código funcione siempre
+    this.load.image("photo", "assets/" + imagenElegida);
 }
 
 function create() {
     const texture = this.textures.get("photo");
     const baseImg = texture.getSourceImage();
     
-    // Dimensiones reales para recorte (4080x3072)
+    // LÓGICA DE RECORTE AUTOMÁTICO (Funciona para cualquier resolución)
     const realW = baseImg.width;
     const realH = baseImg.height;
-    const sizeToCrop = realH; 
-    const startX = (realW - realH) / 2;
+    
+    // Tomamos el lado más corto para hacer un cuadrado perfecto
+    const sizeToCrop = Math.min(realW, realH); 
+    
+    // Calculamos coordenadas para recortar el CENTRO de la imagen
+    const startX = (realW - sizeToCrop) / 2;
+    const startY = (realH - sizeToCrop) / 2;
     const step = sizeToCrop / GRID;
 
-    // Crear frames de las piezas
+    // Crear los 16 cuadros (frames)
     for (let r = 0; r < GRID; r++) {
         for (let c = 0; c < GRID; c++) {
             let index = r * GRID + c;
-            texture.add(index, 0, startX + (c * step), r * step, step, step);
+            texture.add(index, 0, startX + (c * step), startY + (r * step), step, step);
         }
     }
-    // Frame 99 para la solución completa (cuadrado central)
-    texture.add(99, 0, startX, 0, sizeToCrop, sizeToCrop);
+    // Frame 99: Imagen completa para la solución
+    texture.add(99, 0, startX, startY, sizeToCrop, sizeToCrop);
 
-    // Dibujar Tablero
+    // Dibujar el Tablero de Juego
     for (let row = 0; row < GRID; row++) {
         pieces[row] = [];
         for (let col = 0; col < GRID; col++) {
@@ -76,9 +90,9 @@ function create() {
         }
     }
 
-    // --- INTERFAZ DE USUARIO (UI) ---
+    // --- INTERFAZ (UI) ---
 
-    // 1. Temporizador (A la izquierda)
+    // Temporizador a la izquierda
     timerText = this.add.text(20, 65, `Tiempo: ${timeLeft}s`, { 
         fontSize: '34px', 
         fill: '#fff', 
@@ -86,18 +100,18 @@ function create() {
         fontWeight: 'bold' 
     });
 
-    // 2. Botón REINICIAR (A la derecha, más estrecho para no tapar números)
+    // Botón REINICIAR a la derecha (Ancho 140px para no tapar el tiempo)
     createButton(this, 440, 85, 140, "REINICIAR", 0xcc0000, () => {
         location.reload();
     });
 
-    // 3. Botón VER IMAGEN (Centrado, inicialmente oculto)
-    btnShowSolution = createButton(this, 270, 160, 240, "VER IMAGEN COMPLETA", 0x444444, () => {
+    // Botón VER IMAGEN COMPLETA (Se activa al perder)
+    btnShowSolution = createButton(this, 270, 160, 260, "VER IMAGEN COMPLETA", 0x444444, () => {
         showFullImage.call(this);
     });
     btnShowSolution.setVisible(false);
 
-    // Lógica del Temporizador (Cuenta regresiva)
+    // Evento del Temporizador
     timerEvent = this.time.addEvent({
         delay: 1000,
         callback: () => {
@@ -116,7 +130,7 @@ function create() {
     shuffleBoard.call(this);
 }
 
-// Función para crear botones con parámetros de tamaño
+// Función para crear botones estilizados
 function createButton(scene, x, y, width, label, color, callback) {
     const container = scene.add.container(x, y);
     const bg = scene.add.rectangle(0, 0, width, 50, color).setInteractive({ useHandCursor: true });
@@ -136,7 +150,6 @@ function endGameByTime() {
     isGameOver = true;
     timerText.setText("¡TIEMPO AGOTADO!").setFill("#ff0000");
     btnShowSolution.setVisible(true); 
-    // Deshabilitar movimiento de piezas
     pieces.forEach(row => row.forEach(p => { if(p) p.disableInteractive(); }));
 }
 
@@ -157,14 +170,11 @@ function movePiece(piece) {
     const dCol = Math.abs(piece.col - empty.col);
 
     if ((dRow === 1 && dCol === 0) || (dRow === 0 && dCol === 1)) {
-        const oldR = piece.row;
-        const oldC = piece.col;
+        const oldR = piece.row, oldC = piece.col;
         pieces[empty.row][empty.col] = piece;
         pieces[oldR][oldC] = null;
-        piece.row = empty.row;
-        piece.col = empty.col;
-        empty.row = oldR;
-        empty.col = oldC;
+        piece.row = empty.row; piece.col = empty.col;
+        empty.row = oldR; empty.col = oldC;
 
         this.tweens.add({
             targets: [piece, piece.border],
@@ -204,6 +214,6 @@ function checkWin() {
     }
     if (matches === 15) {
         isGameOver = true;
-        timerText.setText(`¡LO LOGRASTE!`).setFill("#00ff00");
+        timerText.setText(`¡GANASTE!`).setFill("#00ff00");
     }
 }
