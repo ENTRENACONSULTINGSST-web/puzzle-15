@@ -25,7 +25,7 @@ let btnShowSolution;
 
 // --- CONFIGURACIÓN DE IMÁGENES ---
 // Asegúrate de que los nombres y extensiones coincidan exactamente con tus archivos en /assets
-const misImagenes = ["imagen1.jpg", "imagen2.jpg", "imagen3.png"];
+const misImagenes = ["imagen1.jpg", "imagen2.jpg", "imagen3.jpg"];
 
 function preload() {
     // Seleccionar una imagen al azar de la lista
