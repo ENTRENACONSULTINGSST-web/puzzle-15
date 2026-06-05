@@ -199,7 +199,7 @@ function movePiece(piece) {
 
 function shuffleBoard() {
     // CONFIGURACIÓN: 50 movimientos = MUY FÁCIL
-    const MOVIMIENTOS_MEZCLA = 50; 
+    const MOVIMIENTOS_MEZCLA = 12; 
     let lastPiece = null;
 
     for (let i = 0; i < MOVIMIENTOS_MEZCLA; i++) {
